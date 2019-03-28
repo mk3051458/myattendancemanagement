@@ -1,0 +1,106 @@
+<?php include "Controllers/config.php";
+
+	//use Spout\Reader\ReaderFactory;
+		use Box\Spout\Reader\ReaderFactory;
+		use Box\Spout\Common\Type;
+		 
+		// Include Spout library 
+		require_once 'Spout/Autoloader/autoload.php';
+	//if(isset($_REQUEST['upload'])){
+
+		if (!empty($_FILES['files']['name'])){   
+		    // Get File extension eg. 'xlsx' to check file is excel sheet
+		    $pathinfo = pathinfo($_FILES["files"]["name"]);
+		    echo "path".$_FILES["files"]["name"];
+		    // check file has extension xlsx, xls and also check file is not empty
+		   if (($pathinfo['extension'] == 'xlsx' || $pathinfo['extension'] == 'xls') && ($_FILES['files']['size'] > 0) ) {
+		         // Temporary file name
+		        $inputFileName = $_FILES['files']['tmp_name']; 
+		        // Read excel file by using ReadFactory object.
+		        $reader = ReaderFactory::create(Type::XLSX);
+		        // Open file
+		        $reader->open($inputFileName);
+		        $count = 1;
+		        $rows = array(); 
+		        // Number of sheet in excel file
+		        foreach ($reader->getSheetIterator() as $sheet) {
+		            // Number of Rows in Excel sheet
+		            foreach ($sheet->getRowIterator() as $row) {
+		                // It reads data after header. In the my excel sheet, 
+		                // header is in the first row. 
+		                if ($count > 1) { 
+		                    $data['block_id'] = $row[0];
+		                	$data['name']=$row[1];
+		                    $data['phone']=$row[2];
+		                    $data['date_of_birth']=$row[3];
+		                    $data['address']=$row[4];                 
+		                    $data['email']=$row[5];
+		                    $data['password']=$row[6];
+
+		                    // Push all data into array to be insert as  batch into MySql database.  
+		                    array_push($rows, $data);
+		                }
+		                $count++;
+		            }          
+		        }
+		       
+				foreach($rows as $r){
+					$c1 = $r['block_id'];
+					$c2 = $r['name'];
+					$c3 = $r['phone'];		
+					$c4 = $r['date_of_birth'];
+					$c5 = $r['address'];
+					$c6 = $r['email'];		
+					$c7 = $r['password'];		
+
+					$k =mysqli_query($con,"INSERT INTO `directors`  VALUES('','$c1','$c2','$c3','$c4','$c5','$c6','$c7') ");
+		            if ($k<=0)
+		            {
+		                echo mysqli_error($con);
+		                die();
+		            }
+				}
+		        // Close excel filew
+		        $reader->close();
+		        echo "<script>window.location.assign('director.php?msg=Directors added successfully.')</script>";
+				
+		 	}
+		      else {
+		 			
+		         echo $pathinfo['extension'].$_FILES['files']['size']."Gaurav";
+		        //echo "<script>window.location.assign('adddirector.php?msg=Please Select Valid Excel File containing teachers details.')</script>";
+				
+		     }
+	 
+	} 
+	elseif(isset($_REQUEST["submit"])){
+
+		$name=$_REQUEST['name'];
+		$contact=$_REQUEST['phone'];
+		$dob=$_REQUEST['dob'];
+		$address=$_REQUEST['address'];
+		$email=$_REQUEST['email'];
+		$password=$_REQUEST['password'];
+		$block=$_REQUEST['block'];
+		echo $name."<br>";
+		echo $block."<br>";
+		echo $contact."<br>";
+		echo $dob."<br>";
+		echo $address."<br>";
+		echo $email."<br>";
+		echo $password."<br>";
+		$q="insert into directors value('','$block','$name','$contact','$dob','$address','$email','$password')";
+		$res=mysqli_query($con,$q);
+		if($res>0){
+			echo "Success";
+			header("location:director.php?msg=Director added successfully.");
+		}
+		else{
+			echo "Failure".mysqli_error($con);
+		}
+
+	}
+	else{
+		header("location:director.php?msg=Please fill this first.");
+	}
+?>
